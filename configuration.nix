@@ -1,5 +1,12 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 
+let
+  devLibs = with pkgs; [
+    openssl
+    zlib
+    libffi
+  ];
+in
 {
   imports = [
     ./hardware-configuration.nix
@@ -28,6 +35,8 @@
   networking.networkmanager.enable = true;
   networking.firewall.allowedTCPPorts = [ 8081 ];
 
+  programs.nix-ld.enable = true;
+
   programs.hyprland = {
     enable = true;
     xwayland.enable = true;
@@ -36,15 +45,31 @@
   services.libinput.enable = true;
   programs.dconf.enable = true;
 
-  environment.systemPackages = with pkgs; [
-    curl
-    wl-clipboard
-    unzip
-    zip
-    haruna
-    hyprlauncher
-    hyprlock
-  ];
+  environment.systemPackages =
+    with pkgs;
+    [
+      curl
+      wl-clipboard
+      unzip
+      zip
+      haruna
+      hyprlauncher
+      hyprlock
+      hyprpaper
+
+      gcc
+      gnumake
+      cmake
+      pkg-config
+    ]
+    ++ devLibs;
+
+  environment.variables = {
+    PKG_CONFIG_PATH = lib.makeSearchPath "lib/pkgconfig" devLibs;
+    LIBRARY_PATH = lib.makeLibraryPath devLibs;
+    C_INCLUDE_PATH = lib.makeSearchPath "include" devLibs;
+    CPLUS_INCLUDE_PATH = lib.makeSearchPath "include" devLibs;
+  };
 
   users.users.sk = {
     isNormalUser = true;
